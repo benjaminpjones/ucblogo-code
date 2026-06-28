@@ -61,6 +61,39 @@ configure files.
 
 [UCBLogo Releases](https://github.com/jrincayc/ucblogo-code/releases)
 
+### Building on macOS (Apple Silicon)
+
+The steps above are incomplete on macOS: the wxWidgets autoconf macro and a
+couple of build helpers aren't on the default search path, so `configure`
+silently disables the GUI and then fails. The block below is a one-shot build
+that produces a self-running `UCBLogo.app`. It requires [Homebrew](https://brew.sh).
+
+Copy and paste the whole thing from the root of this repo:
+
+```sh
+# 1. Build tools + the wxWidgets GUI library
+brew install autoconf automake autoconf-archive wxwidgets texinfo
+
+# 2. Make wxWidgets' and texinfo's helpers visible to the build
+#    (wxwin.m4 ships inside the wxwidgets keg, not on aclocal's default path)
+export ACLOCAL_PATH="$(dirname "$(find "$(brew --prefix wxwidgets)/share" -name wxwin.m4 | head -1)"):$(brew --prefix)/share/aclocal"
+export PATH="$(brew --prefix texinfo)/bin:$PATH"
+
+# 3. Build the interpreter and assemble the app bundle
+#    (--disable-docs avoids needing a full TeX install just for the PDF manual)
+autoreconf --install --force
+./configure --disable-docs
+make
+make mac
+
+# 4. Run it
+open UCBLogo.app
+```
+
+On macOS you must launch the `UCBLogo.app` bundle (via `open` or Finder), not
+the bare `ucblogo` binary — the bundle is where it finds `logolib` and the
+`Messages` file at startup.
+
 ## Previous versions
 
 For getting UCBLogo previous versions such as version 6.0 if you're running wxWidgets or 5.4 if not, please visit [Brian Harvey's UCBLogo GitHub repository](https://github.com/brianharvey/UCBLogo).
