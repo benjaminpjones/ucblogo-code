@@ -43,6 +43,7 @@
 #endif /* end this whole big huge tree */
 
 #include "globals.h"
+#include "turtleshapes.h"
 
 #ifdef HAVE_WX
 int drawToPrinter=0;
@@ -225,7 +226,7 @@ void draw_turtle_helper(void) {
     double cos_real_heading, sin_real_heading;
     FLONUM delta_x, delta_y;
 #endif
-   
+
     prepare_to_draw;
     prepare_to_draw_turtle;
     save_pen(&saved_pen);
@@ -241,16 +242,16 @@ void draw_turtle_helper(void) {
  
     delta_x = x_scale*(FLONUM)(sin_real_heading*turtle_half_bottom);
     delta_y = y_scale*(FLONUM)(cos_real_heading*turtle_half_bottom);
- 
+
     left_x = g_round(turtle_x - delta_x);
     left_y = g_round(turtle_y + delta_y);
- 
+
     right_x = g_round(turtle_x + delta_x);
     right_y = g_round(turtle_y - delta_y);
- 
+
     top_x = g_round(turtle_x + x_scale*(FLONUM)(cos_real_heading*turtle_side));
     top_y = g_round(turtle_y + y_scale*(FLONUM)(sin_real_heading*turtle_side));
- 
+
     /* move to right, draw to left, draw to top, draw to right */
     move_to(screen_x_center + right_x, screen_y_center - right_y);
     line_to(screen_x_center + left_x, screen_y_center - left_y);
@@ -626,6 +627,50 @@ NODE *lsetheading(NODE *arg) {
 
 NODE *lheading(NODE *args) {
     return(make_floatnode(turtle_heading));
+}
+
+/* SETSHAPE word -- choose the cursor shape used to draw the turtle. */
+NODE *lsetshape(NODE *arg) {
+    NODE *val;
+    char name[64];
+    int i, len;
+
+    val = string_arg(arg);
+    if (NOT_THROWING) {
+	len = getstrlen(val);
+	if (len > (int)sizeof(name) - 1) len = (int)sizeof(name) - 1;
+	for (i = 0; i < len; i++) {
+	    char c = getstrptr(val)[i] & 0x7f;	/* canonicalize to lowercase */
+	    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+	    name[i] = c;
+	}
+	name[len] = '\0';
+	if (turtle_shape_named(name) == NULL) {
+	    err_logo(BAD_DATA_UNREC, car(arg));
+	} else {
+	    prepare_to_draw;
+	    draw_turtle();			/* erase the old cursor */
+	    set_turtle_shape_by_name(name);
+	    draw_turtle();			/* draw the new cursor */
+	    done_drawing;
+	}
+    }
+    return(UNBOUND);
+}
+
+/* SHAPE -- output the name of the current cursor shape. */
+NODE *lshape(NODE *args) {
+    return(make_static_strnode((char *)turtle_shape_current_name()));
+}
+
+/* SHAPES -- output a list of the available cursor shape names. */
+NODE *lshapes(NODE *args) {
+    NODE *result = NIL;
+    int i;
+
+    for (i = turtle_shape_count() - 1; i >= 0; i--)
+	result = cons(make_static_strnode((char *)turtle_shape_name_at(i)), result);
+    return(result);
 }
 
 NODE *vec_arg_helper(NODE *args, BOOLEAN floatok, BOOLEAN three) {

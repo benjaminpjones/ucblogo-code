@@ -1,0 +1,6 @@
+SETSHAPE shapename
+
+	sets the shape used to draw the turtle cursor.  The input is
+	a word naming one of the built-in shapes:  TURTLE, CLASSIC,
+	TRIANGLE, SQUARE, or CIRCLE.  The default is TURTLE.  The shape
+	rotates to follow the turtle's heading.  See SHAPE and SHAPES.

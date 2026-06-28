@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "wxTurtleGraphics.h"
 #include "TextEditor.h"
+#include "turtleshapes.h"
 #include <wx/stdpaths.h>
 #define WX_TURTLEGRAPHICS_CPP 1
 
@@ -322,9 +323,7 @@ extern "C" FIXNUM g_round(FLONUM n);
 
 void TurtleCanvas::DrawTurtle(wxDC &dc) {
   FLONUM real_heading;
-  int left_x, left_y, right_x, right_y, top_x, top_y;
   double cos_real_heading, sin_real_heading;
-  FLONUM delta_x, delta_y;
   if (!user_turtle_shown) {
     return;
   }
@@ -333,8 +332,6 @@ void TurtleCanvas::DrawTurtle(wxDC &dc) {
   const int screen_height = wxGetInfo(SCREEN_HEIGHT);
   const int screen_top = 0;
   const int screen_left = 0;
-  const FLONUM turtle_side = 19.0;
-  const FLONUM turtle_half_bottom = 6.0;
   const int screen_x_center = (screen_left + (screen_width)/2);
   const int screen_y_center = (screen_top + (screen_height)/2);
 
@@ -343,31 +340,28 @@ void TurtleCanvas::DrawTurtle(wxDC &dc) {
   cos_real_heading = cos((FLONUM)(real_heading*degrad));
   sin_real_heading = sin((FLONUM)(real_heading*degrad));
 
-  delta_x = x_scale*(FLONUM)(sin_real_heading*turtle_half_bottom);
-  delta_y = y_scale*(FLONUM)(cos_real_heading*turtle_half_bottom);
+  // Draw a little turtle (shell + head + four legs + tail) instead of a bare
+  // triangle, LogoWriter style.  Shapes are described in turtle-local
+  // coordinates -- f points forward along the heading, s points to the
+  // turtle's left -- and P() rotates/translates them onto the screen.
+  auto P = [&](double f, double s) -> wxPoint {
+    double mx = turtle_x + x_scale*(f*cos_real_heading - s*sin_real_heading);
+    double my = turtle_y + y_scale*(f*sin_real_heading + s*cos_real_heading);
+    return wxPoint(screen_x_center + g_round(mx), screen_y_center - g_round(my));
+  };
 
-  left_x = g_round(turtle_x - delta_x);
-  left_y = g_round(turtle_y + delta_y);
+  // Draw whichever cursor shape is currently selected (see turtleshapes.c),
+  // filled in the pen color.  Each shape vertex is given in turtle-local
+  // (f = forward, s = left) coordinates, which P() rotates onto the screen.
+  wxColour turtleColour = colors[turtleFrame->xgr_pen.color+SPECIAL_COLORS];
+  dc.SetPen(wxPen(turtleColour, turtleFrame->xgr_pen.pw, wxPENSTYLE_SOLID));
+  dc.SetBrush(wxBrush(turtleColour));
 
-  right_x = g_round(turtle_x + delta_x);
-  right_y = g_round(turtle_y - delta_y);
-
-  top_x = g_round(turtle_x + x_scale*(FLONUM)(cos_real_heading*turtle_side));
-  top_y = g_round(turtle_y + y_scale*(FLONUM)(sin_real_heading*turtle_side));
-
-  /* move to right, draw to left, draw to top, draw to right */
-  //move_to(screen_x_center + right_x, screen_y_center - right_y);
-  //line_to(screen_x_center + left_x, screen_y_center - left_y);
-  dc.SetPen(wxPen(colors[turtleFrame->xgr_pen.color+SPECIAL_COLORS],
-		  turtleFrame->xgr_pen.pw, wxPENSTYLE_SOLID));
-  dc.DrawLine(screen_x_center + right_x, screen_y_center - right_y,
-	      screen_x_center + left_x, screen_y_center - left_y);
-  //line_to(screen_x_center + top_x, screen_y_center - top_y);
-  dc.DrawLine(screen_x_center + left_x, screen_y_center - left_y,
-	      screen_x_center + top_x, screen_y_center - top_y);
-  //line_to(screen_x_center + right_x, screen_y_center - right_y);
-  dc.DrawLine(screen_x_center + top_x, screen_y_center - top_y,
-	      screen_x_center + right_x, screen_y_center - right_y);
+  const turtle_shape *shp = current_turtle_shape;
+  wxPoint pts[TURTLE_MAX_VERTS];   // bound guaranteed in turtleshapes.c
+  for (int i = 0; i < shp->count; i++)
+    pts[i] = P(shp->verts[i].f, shp->verts[i].s);
+  dc.DrawPolygon(shp->count, pts);
 
 }
 

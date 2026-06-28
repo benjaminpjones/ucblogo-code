@@ -1,0 +1,4 @@
+SHAPE
+
+	outputs a word, the name of the turtle's current cursor shape.
+	See SETSHAPE and SHAPES.

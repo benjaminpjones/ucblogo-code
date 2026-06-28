@@ -1,0 +1,4 @@
+SHAPES
+
+	outputs a list of the names of the available turtle cursor
+	shapes.  See SETSHAPE and SHAPE.
