@@ -1,0 +1,4 @@
+SPEED
+
+	outputs a number from 0 to 10, the turtle's current animation
+	speed.  0 means no animation (instant drawing).  See SETSPEED.

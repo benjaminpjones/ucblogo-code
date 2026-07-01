@@ -89,6 +89,7 @@ enum s_md screen_mode = SCREEN_TEXT;
 
 mode_type current_mode = wrapmode;
 FLONUM turtle_x = 0.0, turtle_y = 0.0, turtle_heading = 0.0;
+int turtle_speed = 0;	/* 0 = instant (no animation), 1 = slowest .. 10 = fast */
 FLONUM x_scale = 1.0, y_scale = 1.0;
 BOOLEAN turtle_shown = FALSE, user_turtle_shown = TRUE;
 int graphics_setup = 0;
@@ -671,6 +672,25 @@ NODE *lshapes(NODE *args) {
     for (i = turtle_shape_count() - 1; i >= 0; i--)
 	result = cons(make_static_strnode((char *)turtle_shape_name_at(i)), result);
     return(result);
+}
+
+/* SETSPEED level -- set how fast the turtle animates its moves, 0 (instant,
+   no animation) through 10 (fast).  Values above 10 are clamped. */
+NODE *lsetspeed(NODE *arg) {
+    NODE *val;
+
+    val = pos_int_arg(arg);
+    if (NOT_THROWING) {
+	int s = (int)getint(val);
+	if (s > 10) s = 10;
+	turtle_speed = s;
+    }
+    return(UNBOUND);
+}
+
+/* SPEED -- output the current turtle animation speed (0..10). */
+NODE *lspeed(NODE *args) {
+    return(make_intnode((FIXNUM)turtle_speed));
 }
 
 NODE *vec_arg_helper(NODE *args, BOOLEAN floatok, BOOLEAN three) {

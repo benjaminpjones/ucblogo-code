@@ -317,6 +317,7 @@ void TurtleCanvas::OnSize(wxSizeEvent& event) {
 }
 
 extern FLONUM turtle_x, turtle_y, turtle_heading;
+extern int turtle_speed;
 extern "C" FLONUM x_scale, y_scale;
 extern "C" BOOLEAN user_turtle_shown;
 extern "C" FIXNUM g_round(FLONUM n);
@@ -976,6 +977,47 @@ extern "C" void wxDrawLine(int x1, int y1, int x2, int y2, int vis){
     l.color = turtleFrame->xgr_pen.color;
     l.pm = turtleFrame->xgr_pen.pen_mode;
     l.pw = turtleFrame->xgr_pen.pw;
+
+#if USE_MEMDC
+    /* Animated drawing: when a speed is set, grow the line in small steps and
+       walk the turtle cursor along it, refreshing between steps.  Only for the
+       live on-screen turtle (not the printer or a redraw replay).  The whole
+       segment is still drawn to the memDC, so the persistent picture and the
+       graphics.c redraw record are unaffected. */
+    if (turtle_speed > 0 && !drawToPrinter && !drawToWindow) {
+	FLONUM final_x = turtle_x, final_y = turtle_y;   /* cursor's end point */
+	int dx = x2 - x1, dy = y2 - y1;
+	int adx = (dx < 0) ? -dx : dx, ady = (dy < 0) ? -dy : dy;
+	int span = (adx > ady) ? adx : ady;
+	int steps = span / turtle_speed;		/* faster speed, bigger hops */
+	int delayMs = 20 - 2 * turtle_speed;		/* faster speed, shorter pause */
+	int prevx = x1, prevy = y1, i;
+	if (steps < 1) steps = 1;
+	if (delayMs < 1) delayMs = 1;
+	for (i = 1; i <= steps; i++) {
+	    struct line seg = l;
+	    seg.x1 = prevx;
+	    seg.y1 = prevy;
+	    seg.x2 = x1 + dx * i / steps;
+	    seg.y2 = y1 + dy * i / steps;
+	    TurtleCanvas::drawOneLine(&seg, m_memDC);
+	    turtle_x = final_x + (seg.x2 - x2);		/* cursor at this step */
+	    turtle_y = final_y - (seg.y2 - y2);
+	    wx_refresh();
+	    /* Pump the event loop so the frame actually composites to screen;
+	       a blocked main thread won't repaint on macOS otherwise. */
+	    if (wxTheApp != NULL)
+		wxTheApp->Yield(true);
+	    wxMilliSleep(delayMs);
+	    prevx = seg.x2;
+	    prevy = seg.y2;
+	}
+	turtle_x = final_x;				/* land exactly on the end */
+	turtle_y = final_y;
+	return;
+    }
+#endif
+
     if (drawToPrinter)
 	TurtleCanvas::drawOneLine(&l, printerDC);
     else if (drawToWindow)

@@ -1,0 +1,8 @@
+SETSPEED level
+
+	sets how fast the turtle animates its movements.  The input is
+	a number from 0 to 10.  0 (the default) means no animation:  the
+	turtle and its drawing jump instantly to the result.  1 is the
+	slowest visible speed and 10 is the fastest; in between, the
+	turtle is shown walking along each line as it draws.  Levels
+	above 10 are treated as 10.  See SPEED.

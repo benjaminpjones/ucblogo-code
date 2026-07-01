@@ -391,8 +391,10 @@ PRIMTYPE prims[] = {
     {"seth", 1, 1, 1, PREFIX_PRIORITY, lsetheading},
     {"setheading", 1, 1, 1, PREFIX_PRIORITY, lsetheading},
     {"setshape", 1, 1, 1, PREFIX_PRIORITY, lsetshape},
+    {"setspeed", 1, 1, 1, PREFIX_PRIORITY, lsetspeed},
     {"shape", 0, 0, 0, PREFIX_PRIORITY, lshape},
     {"shapes", 0, 0, 0, PREFIX_PRIORITY, lshapes},
+    {"speed", 0, 0, 0, PREFIX_PRIORITY, lspeed},
     {"sethelploc", 1, 1, 1, PREFIX_PRIORITY, lsethelploc},
     {"setitem", 3, 3, 3, PREFIX_PRIORITY, lsetitem},
 #ifdef HAVE_WX
